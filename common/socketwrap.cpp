@@ -64,3 +64,27 @@ int Write(int fd, const void *buf,size_t count){
 	}
 	return n;
 }
+
+int Recv(int sockfd,void *buf,size_t len,int flags){
+	int n=recv(sockfd,buf,len,flags);
+	if(n==-1){
+		printf("recv error!\n");
+	}
+	return n;
+}
+
+int Send(int sockfd,const void *buf,size_t len,int flags){
+	int n=send(sockfd,buf,len,flags);
+	if(n==-1){
+		printf("send error!\n");
+	}
+	return n;
+}
+
+int Select(int nfds,fd_set *readfds,fd_set *writefds,fd_set *exceptfds,struct timeval *timeout){
+	int n=select(nfds,readfds,writefds,exceptfds,timeout);
+	if(n==-1){
+		printf("select error!\n");
+	}
+	return n;
+}

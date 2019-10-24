@@ -11,6 +11,8 @@ enum CMD{
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
+	CMD_NEW_USER,
+	CMD_EXIT,
 	CMD_ERROR
 };
 //包头
@@ -51,8 +53,16 @@ struct LOGOUTRESULT:public DATAHEADER{
 		cmd=CMD_LOGOUT_RESULT;
 		dataLength=sizeof(LOGOUTRESULT);
 		result=0;
-	}	
+	}
 	int result;
+};
+
+struct NEWUSER:public DATAHEADER{
+	NEWUSER(){
+		cmd=CMD_NEW_USER;
+		dataLength=sizeof(NEWUSER);
+	}
+	int fds;
 };
 
 //进阶,使用继承的方法
@@ -84,4 +94,8 @@ int Read(int fd,void *buf,size_t count);
 
 int Write(int fd,const void *buf,size_t count);
 
+int Recv(int sockfd,void *buf,size_t len,int flags);
 
+int Send(int sockfd,const void *buf,size_t len,int flags);
+
+int Select(int nfds,fd_set *readfds,fd_set *writefds,fd_set *exceptfds,struct timeval *timeout);
