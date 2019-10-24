@@ -2,6 +2,9 @@
 #include <string.h>
 #include <cstdio>
 #include <arpa/inet.h>
+#include <thread>
+
+bool g_bloops=true;
 
 int sendNewUser(int clientfd){
 	NEWUSER user;
@@ -25,14 +28,14 @@ int processor(int fd){
 		case CMD_LOGIN_RESULT:{
 			Recv(fd,buff+sizeof(DATAHEADER),sizeof(LOGINRESULT)-sizeof(DATAHEADER),0);
 			LOGIN *login=(LOGIN*)buff;
-			printf("收到客户端消息长度:%d，消息类型:%d\n",login->dataLength,login->cmd);
+			printf("收到服务端消息长度:%d，消息类型:%d\n",login->dataLength,login->cmd);
 			return 1;
 		}
 
 		case CMD_LOGOUT_RESULT:{
 			Recv(fd,buff+sizeof(DATAHEADER),sizeof(LOGOUTRESULT)-sizeof(DATAHEADER),0);
 			LOGOUTRESULT *ret=(LOGOUTRESULT*)buff;
-			printf("收到客户端消息长度:%d，消息类型:%d\n",ret->dataLength,ret->cmd);
+			printf("收到服务端消息长度:%d，消息类型:%d\n",ret->dataLength,ret->cmd);
 			return 1;
 		}
 
@@ -44,6 +47,25 @@ int processor(int fd){
 		}
 	}
 	return -1;
+}
+
+void sendCmd(int fd){//线程处理函数
+	while(1){
+		char cmdBuff[128];
+		scanf("%s",&cmdBuff);
+		if(strcmp(cmdBuff,"login")==0){
+			LOGIN login;
+			strcpy(login.username,"张三");
+			strcpy(login.password,"1234");
+			Send(fd,(const char*)&login,sizeof(LOGIN),0);
+		}else if(strcmp(cmdBuff,"logout")==0){
+			LOGOUT out;
+			strcpy(out.username,"张三");
+			Send(fd,(const char*)&out,sizeof(LOGOUT),0);
+		}else if(0==strcmp(cmdBuff,"exit")){
+			g_bloops=false;
+		}
+	}
 }
 
 int main(){
@@ -61,10 +83,12 @@ int main(){
 	inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr);
 	Connect(connfd,(const struct sockaddr*)&addr,sizeof(sockaddr_in));
 	//直接向客户端发送新用户消息
-
 	sendNewUser(connfd);
+	//启动发送消息线程
+	std::thread t1(sendCmd,connfd);
+	t1.detach();
 
-	while(true){
+	while(g_bloops){
 		FD_ZERO(&fdRead);
 		FD_SET(connfd,&fdRead);
 
