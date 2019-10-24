@@ -36,6 +36,12 @@ int processor(int fd){
 			return 1;
 		}
 
+		case CMD_EXIT:{
+			Recv(fd,buff+sizeof(DATAHEADER),sizeof(USEREXIT)-sizeof(DATAHEADER),0);
+			USEREXIT *ret=(USEREXIT*)buff;
+			printf("有客户端退出，当前连接数%d\n",ret->fds);
+			return 1;
+		}
 	}
 	return -1;
 }
@@ -59,7 +65,20 @@ int main(){
 	sendNewUser(connfd);
 
 	while(true){
-		
+		FD_ZERO(&fdRead);
+		FD_SET(connfd,&fdRead);
+
+		tv.tv_sec=0;
+		tv.tv_usec=0;
+
+		Select(connfd+1,&fdRead,NULL,NULL,&tv);
+
+		if(FD_ISSET(connfd,&fdRead)){
+			FD_CLR(connfd,&fdRead);
+			if(-1==processor(connfd)){
+				Close(connfd);
+			}
+		}
 	}
 	return 0;
 }

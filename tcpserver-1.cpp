@@ -93,6 +93,12 @@ int main(){
 					Close(g_clients[i]);
 					std::vector<int>::iterator iter=std::find(g_clients.begin(),g_clients.end(),g_clients[i]);
 					g_clients.erase(iter);
+					//广播消息
+					for(int i=0;i<g_clients.size();i++){//有客户端退出，广播消息
+							USEREXIT user;
+							user.fds=g_clients.size();//客户端总数
+						  Send(g_clients[i],(const char*)&user,sizeof(USEREXIT),0);
+					}
 				}
 			}
 		}
@@ -101,6 +107,11 @@ int main(){
 			socklen_t socklen=sizeof(sockaddr_in);
 			connfd=Accept(listenfd,(sockaddr*)&clientAddr,&socklen);
 			g_clients.push_back(connfd);//保存套接字描述符到vector中
+			for(int i=0;i<g_clients.size();i++){//向所有的客户端广播消息，有新的客户加入
+					NEWUSER user;
+					user.fds=g_clients.size();//客户端总数
+				  Send(g_clients[i],(const char*)&user,sizeof(NEWUSER),0);
+			}
 			char IPaddress[32];
 			inet_ntop(AF_INET,&clientAddr.sin_addr,IPaddress,32);
 			printf("新客户端加入：socket=%d,IP=%s\n",connfd,IPaddress);

@@ -21,7 +21,7 @@ struct DATAHEADER{
 	short cmd;//命令
 };
 //包体
-struct LOGIN:public DATAHEADER{
+struct LOGIN:public DATAHEADER{//客户端登录
 	LOGIN(){
 		dataLength=sizeof(LOGIN);
 		cmd=CMD_LOGIN;
@@ -30,7 +30,7 @@ struct LOGIN:public DATAHEADER{
 	char password[32];
 };
 
-struct LOGINRESULT:public DATAHEADER{
+struct LOGINRESULT:public DATAHEADER{//登录结果
 	LOGINRESULT(){
 		dataLength=sizeof(LOGINRESULT);
 		cmd=CMD_LOGIN_RESULT;
@@ -40,7 +40,7 @@ struct LOGINRESULT:public DATAHEADER{
 
 };
 
-struct LOGOUT:public DATAHEADER{
+struct LOGOUT:public DATAHEADER{//客户端登出
 	LOGOUT(){
 		cmd=CMD_LOGOUT;
 		dataLength=sizeof(LOGOUT);
@@ -48,7 +48,7 @@ struct LOGOUT:public DATAHEADER{
 	char username[32];
 };
 
-struct LOGOUTRESULT:public DATAHEADER{
+struct LOGOUTRESULT:public DATAHEADER{//登出结果
 	LOGOUTRESULT(){
 		cmd=CMD_LOGOUT_RESULT;
 		dataLength=sizeof(LOGOUTRESULT);
@@ -57,12 +57,20 @@ struct LOGOUTRESULT:public DATAHEADER{
 	int result;
 };
 
-struct NEWUSER:public DATAHEADER{
+struct NEWUSER:public DATAHEADER{//新的客户端加入
 	NEWUSER(){
 		cmd=CMD_NEW_USER;
 		dataLength=sizeof(NEWUSER);
 	}
-	int fds;
+	int fds;//当前连接数
+};
+
+struct USEREXIT:public DATAHEADER{//客户端退出
+	USEREXIT(){
+		cmd=CMD_EXIT;
+		dataLength=sizeof(USEREXIT);
+	}
+	int fds;//当前连接数
 };
 
 //进阶,使用继承的方法
