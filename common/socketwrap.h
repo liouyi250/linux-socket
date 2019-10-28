@@ -1,11 +1,22 @@
-#include <sys/types.h>
-#include <sys/socket.h> //basic socket definitions
-#include <netinet/in.h> //sockaddr struct header
-#include <unistd.h> //read and write function header
+#ifndef _SOCKETWRAP_H
+#define _SOCKETWRAP_H
+#define WIN32_LEAN_AND_MEAN
+#ifdef _WIN32
+	#include <winsock2.h>
+	#include <windows.h>
+	#define socklen_t int
+#else
+	#include <sys/types.h>
+	#include <sys/socket.h> //basic socket definitions
+	#include <netinet/in.h> //sockaddr struct header
+	#include <unistd.h> //read and write function header
+	#include <arpa/inet.h>
+#endif
+
 
 
 //网络数据报文定义包含包头和包体
-///包头描述消息包大小和作用，一般为int型
+//包头描述消息包大小和作用，一般为int型
 enum CMD{
 	CMD_LOGIN,
 	CMD_LOGIN_RESULT,
@@ -102,8 +113,11 @@ int Read(int fd,void *buf,size_t count);
 
 int Write(int fd,const void *buf,size_t count);
 
-int Recv(int sockfd,void *buf,size_t len,int flags);
+int Recv(int sockfd,char *buf,size_t len,int flags);
 
-int Send(int sockfd,const void *buf,size_t len,int flags);
+int Send(int sockfd,const char *buf,size_t len,int flags);
 
 int Select(int nfds,fd_set *readfds,fd_set *writefds,fd_set *exceptfds,struct timeval *timeout);
+
+
+#endif

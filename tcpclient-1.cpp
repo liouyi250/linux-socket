@@ -1,8 +1,8 @@
-#include "./common/socketwrap.h"
-#include <string.h>
-#include <cstdio>
-#include <arpa/inet.h>
 #include <thread>
+#include <string.h>
+#include <stdio.h>
+#include "./common/socketwrap.h"
+
 
 bool g_bloops=true;
 
@@ -76,11 +76,24 @@ int main(){
 	char writebuff[1024]={0};
 	char readbuff[1024]={0};
 
+	#ifdef _WIN32
+		WSADATA data;
+		int ret=WSAStartup(MAKEWORD(2,2),&data);
+		if(ret!=0){
+			printf("初始化套接字环境失败\n");
+			return 0;
+		}
+	#endif
+
 	connfd=Socket(AF_INET,SOCK_STREAM,0);
 
 	addr.sin_family=AF_INET;
 	addr.sin_port=htons(8000);
-	inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr);
+	#ifndef _WIN32
+		inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr);
+	#else
+		addr.sin_addr.S_un.S_addr=inet_addr("127.0.0.1");
+	#endif
 	Connect(connfd,(const struct sockaddr*)&addr,sizeof(sockaddr_in));
 	//直接向客户端发送新用户消息
 	sendNewUser(connfd);
@@ -104,5 +117,8 @@ int main(){
 			}
 		}
 	}
+	#ifdef _WIN32
+		WSACleanup();
+	#endif
 	return 0;
 }

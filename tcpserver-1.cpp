@@ -1,9 +1,7 @@
-#include "./common/socketwrap.h"
+#include "common/socketwrap.h"
 #include <string.h>
-#include <cstdio>
-#include <sys/select.h> //select function header
 #include <vector>
-#include <arpa/inet.h>
+#include <stdio.h>
 #include <algorithm>
 //select(int nfds,fd_set *readfds,fd_set *writefds,fd_set *exceptfds,strcut timeval *timeout);
 //nfds在fd_set最大描述符,在linux中就是listenfd+1
@@ -55,9 +53,16 @@ int main(){
 	std::vector<int> g_clients;
 	struct timeval timeout;
 	char buff[128];
-
+#ifdef _WIN32
+	WSADATA data;
+		int ret=WSAStartup(MAKEWORD(2,2),&data);
+		if(ret!=0){
+			printf("初始化套接字环境失败\n");
+			return 0;
+		}
+#endif
 	listenfd=Socket(AF_INET,SOCK_STREAM,0);
-	bzero(&servaddr,sizeof(servaddr));
+//	bzero(&servaddr,sizeof(servaddr));
 	servaddr.sin_family=AF_INET;
 	servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
 	servaddr.sin_port=htons(8000);
@@ -113,7 +118,11 @@ int main(){
 				  Send(g_clients[i],(const char*)&user,sizeof(NEWUSER),0);
 			}
 			char IPaddress[32];
-			inet_ntop(AF_INET,&clientAddr.sin_addr,IPaddress,32);
+			#ifndef _WIN32
+				inet_ntop(AF_INET,&clientAddr.sin_addr,IPaddress,32);
+			#else
+				strcpy(IPaddress,inet_ntoa(clientAddr.sin_addr));
+			#endif
 			printf("新客户端加入：socket=%d,IP=%s\n",connfd,IPaddress);
 			if(connfd>maxsock){
 				maxsock=connfd; //每次有个新的客户端链接都要保证maxsock是最大的
@@ -122,5 +131,8 @@ int main(){
 
 	}
 	Close(listenfd);
+	#ifdef _WIN32
+	WSACleanup(); 
+	#endif
 	return 0;
 }

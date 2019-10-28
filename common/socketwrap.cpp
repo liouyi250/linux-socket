@@ -34,7 +34,12 @@ int Accept(int sockfd,struct sockaddr *addr,socklen_t *addrlen){
 }
 
 int Close(int fd){
-	int n=close(fd);
+	int n;
+#ifdef _WIN32
+	n=closesocket(fd);
+#else
+	n=close(fd);
+#endif
 	if(n==-1){
 		printf("close error!\n");
 	}
@@ -49,31 +54,17 @@ int Connect(int sockfd,const struct sockaddr *addr,socklen_t addrlen){
 	return n;
 }
 
-int Read(int fd,void *buf,size_t count){
-	int n=read(fd,buf,count);
-	if(n==-1){
-		printf("read error!\n");
-	}
-	return n; //the number of bytes
-}
 
-int Write(int fd, const void *buf,size_t count){
-	int n=write(fd,buf,count);
-	if(n==-1){
-		printf("write error!\n");
-	}
-	return n;
-}
 
-int Recv(int sockfd,void *buf,size_t len,int flags){
+int Recv(int sockfd,char *buf,size_t len,int flags){
 	int n=recv(sockfd,buf,len,flags);
-	if(n==-1){
-		printf("recv error!\n");
+	if(n<=0){
+		printf("connection close!\n");
 	}
 	return n;
 }
 
-int Send(int sockfd,const void *buf,size_t len,int flags){
+int Send(int sockfd,const char *buf,size_t len,int flags){
 	int n=send(sockfd,buf,len,flags);
 	if(n==-1){
 		printf("send error!\n");
