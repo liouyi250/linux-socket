@@ -1,55 +1,10 @@
 #include <thread>
 #include <string.h>
 #include <stdio.h>
-#include "./common/socketwrap.h"
-
-
+#include "client.hpp"
 bool g_bloops=true;
 
-int sendNewUser(int clientfd){
-	NEWUSER user;
-	user.fds=0;
-	return Send(clientfd,(const char*)&user,sizeof(NEWUSER),0);
-}
-
-int processor(int fd){
-	char buff[1024];
-	int ret=Recv(fd,buff,sizeof(DATAHEADER),0);
-	if(ret<=0) return -1;
-	DATAHEADER *header=(DATAHEADER*)buff;
-	switch (header->cmd) {
-		case CMD_NEW_USER:{
-			Recv(fd,buff+sizeof(DATAHEADER),sizeof(NEWUSER)-sizeof(DATAHEADER),0);
-			NEWUSER *user=(NEWUSER*)buff;
-			printf("新的客户端加入,当前连接数:%d\n",user->fds);
-			return 1;
-		}
-
-		case CMD_LOGIN_RESULT:{
-			Recv(fd,buff+sizeof(DATAHEADER),sizeof(LOGINRESULT)-sizeof(DATAHEADER),0);
-			LOGIN *login=(LOGIN*)buff;
-			printf("收到服务端消息长度:%d，消息类型:%d\n",login->dataLength,login->cmd);
-			return 1;
-		}
-
-		case CMD_LOGOUT_RESULT:{
-			Recv(fd,buff+sizeof(DATAHEADER),sizeof(LOGOUTRESULT)-sizeof(DATAHEADER),0);
-			LOGOUTRESULT *ret=(LOGOUTRESULT*)buff;
-			printf("收到服务端消息长度:%d，消息类型:%d\n",ret->dataLength,ret->cmd);
-			return 1;
-		}
-
-		case CMD_EXIT:{
-			Recv(fd,buff+sizeof(DATAHEADER),sizeof(USEREXIT)-sizeof(DATAHEADER),0);
-			USEREXIT *ret=(USEREXIT*)buff;
-			printf("有客户端退出，当前连接数%d\n",ret->fds);
-			return 1;
-		}
-	}
-	return -1;
-}
-
-void sendCmd(int fd){//线程处理函数
+void sendCmd(Client *client){//线程处理函数
 	while(1){
 		char cmdBuff[128];
 		scanf("%s",&cmdBuff);
@@ -57,68 +12,37 @@ void sendCmd(int fd){//线程处理函数
 			LOGIN login;
 			strcpy(login.username,"张三");
 			strcpy(login.password,"1234");
-			Send(fd,(const char*)&login,sizeof(LOGIN),0);
+			client->send(&login);
 		}else if(strcmp(cmdBuff,"logout")==0){
 			LOGOUT out;
 			strcpy(out.username,"张三");
-			Send(fd,(const char*)&out,sizeof(LOGOUT),0);
+			client->send(&out);
 		}else if(0==strcmp(cmdBuff,"exit")){
 			g_bloops=false;
+			break;
 		}
 	}
 }
 
 int main(){
-	int connfd;
-	struct sockaddr_in addr={};
-	fd_set fdRead;
-	timeval tv;
-	char writebuff[1024]={0};
-	char readbuff[1024]={0};
-
-	#ifdef _WIN32
-		WSADATA data;
-		int ret=WSAStartup(MAKEWORD(2,2),&data);
-		if(ret!=0){
-			printf("初始化套接字环境失败\n");
-			return 0;
-		}
-	#endif
-
-	connfd=Socket(AF_INET,SOCK_STREAM,0);
-
-	addr.sin_family=AF_INET;
-	addr.sin_port=htons(8000);
-	#ifndef _WIN32
-		inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr);
-	#else
-		addr.sin_addr.S_un.S_addr=inet_addr("127.0.0.1");
-	#endif
-	Connect(connfd,(const struct sockaddr*)&addr,sizeof(sockaddr_in));
+	Client client1;
+	client1.init();
+	client1.connect("127.0.0.1",8000);
 	//直接向客户端发送新用户消息
-	sendNewUser(connfd);
+	NEWUSER user1;
+	client1.send(&user1);
 	//启动发送消息线程
-	std::thread t1(sendCmd,connfd);
+	std::thread t1(sendCmd,&client1);
 	t1.detach();
 
+
+
+
 	while(g_bloops){
-		FD_ZERO(&fdRead);
-		FD_SET(connfd,&fdRead);
+		client1.onSelect();
 
-		tv.tv_sec=0;
-		tv.tv_usec=0;
-
-		Select(connfd+1,&fdRead,NULL,NULL,&tv);
-
-		if(FD_ISSET(connfd,&fdRead)){
-			FD_CLR(connfd,&fdRead);
-			if(-1==processor(connfd)){
-				Close(connfd);
-			}
-		}
 	}
-	#ifdef _WIN32
-		WSACleanup();
-	#endif
+	client1.close();
+
 	return 0;
 }
