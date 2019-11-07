@@ -12,11 +12,11 @@ void sendCmd(Client *client){//线程处理函数
 			LOGIN login;
 			strcpy(login.username,"张三");
 			strcpy(login.password,"1234");
-			client->send(&login);
+			client->send(&login,sizeof(LOGIN));
 		}else if(strcmp(cmdBuff,"logout")==0){
 			LOGOUT out;
 			strcpy(out.username,"张三");
-			client->send(&out);
+			client->send(&out,sizeof(LOGOUT));
 		}else if(0==strcmp(cmdBuff,"exit")){
 			g_bloops=false;
 			break;
@@ -25,24 +25,36 @@ void sendCmd(Client *client){//线程处理函数
 }
 
 int main(){
-	Client client1;
-	client1.init();
-	client1.connect("127.0.0.1",8000);
-	//直接向客户端发送新用户消息
-	NEWUSER user1;
-	client1.send(&user1);
-	//启动发送消息线程
-	std::thread t1(sendCmd,&client1);
-	t1.detach();
+	const int n=63;
+	Client *client[n];
+	for(int i=0;i<n;i++){
+		client[i]=new Client();
+		client[i]->init();
+	}
 
+	for(int i=0;i<n;i++){
+		client[i]->connect("127.0.0.1",8000);
+	}
 
-
-
+	LOGIN login;
+	strcpy(login.username,"张三");
+	strcpy(login.password,"李四");
+	int size=sizeof(LOGIN);
 	while(g_bloops){
-		client1.onSelect();
+		for(int i=0;i<n;i++){
+		client[i]->send(&login,size);
+                client[i]->onSelect();
 
 	}
-	client1.close();
+		
+//		client1.onSelect();
 
+	}
+
+	for(int i=0;i<n;i++){
+		client[i]->close();
+
+	}
+	
 	return 0;
 }

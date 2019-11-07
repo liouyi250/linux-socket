@@ -39,6 +39,7 @@ struct LOGIN:public DATAHEADER{//客户端登录
 	}
 	char username[32];
 	char password[32];
+	char code[954];
 };
 
 struct LOGINRESULT:public DATAHEADER{//登录结果
@@ -48,6 +49,7 @@ struct LOGINRESULT:public DATAHEADER{//登录结果
 		result=0;
 	}
 	int result;
+	char code[1024];
 
 };
 
