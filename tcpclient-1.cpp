@@ -25,7 +25,7 @@ void sendCmd(Client *client){//线程处理函数
 }
 
 int main(){
-	const int n=63;
+	const int n=100;
 	Client *client[n];
 	for(int i=0;i<n;i++){
 		client[i]=new Client();

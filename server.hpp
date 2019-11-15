@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <string.h>
+#include <stdio.h>
+
+#include "Timer.hpp"
 #include "common/socketwrap.h"
 
 #ifndef BUFF_SIZE
@@ -47,6 +50,8 @@ private:
   std::vector<ClientSocket*> clients;
   int maxsock;
   char secondBuff[BUFF_SIZE];//第二缓冲区
+  Timer timer;
+  int packNum;
 public:
   Server(){
     listenfd=-1;
@@ -57,6 +62,7 @@ public:
       this->close(clients[n]);
     }
     this->close(listenfd);
+    
 
   #ifdef _WIN32
     WSACleanup();
@@ -75,6 +81,7 @@ public:
     #endif
     	listenfd=Socket(AF_INET,SOCK_STREAM,0);
       maxsock=listenfd;
+      packNum=0;
   }
 
   int bind(const char *ip,unsigned short port){
@@ -179,6 +186,13 @@ public:
   }
 
   void onNetMsg(int fd,DATAHEADER *header){
+    packNum++;
+    double elapsed=timer.getElapsedTimeInSec();
+      if(elapsed>=1.0){
+        printf("Elapsed:%lf,recv:%d\n",elapsed,packNum);
+        packNum=0;
+        timer.update();
+      }
     switch (header->cmd) {
       case CMD_NEW_USER:{
         NEWUSER *user=(NEWUSER*)header;
@@ -211,6 +225,7 @@ public:
 }
 
 int processor(ClientSocket *client){
+    
     int ret=Recv(client->getfd(),secondBuff,BUFF_SIZE,0);//全部从socket默认缓冲区里面接收完
     if(ret<=0) {
       return -1;

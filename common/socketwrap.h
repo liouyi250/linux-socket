@@ -2,6 +2,7 @@
 #define _SOCKETWRAP_H
 #define WIN32_LEAN_AND_MEAN
 #ifdef _WIN32
+#define  FD_SETSIZE 1024//使Windows下具有处理超过64套接字能力
 	#include <winsock2.h>
 	#include <windows.h>
 	#define socklen_t int
