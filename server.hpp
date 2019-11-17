@@ -159,11 +159,11 @@ public:
 
 
 		if(FD_ISSET(listenfd,&fdRead)){
-                        FD_CLR(listenfd,&fdRead);
-                        sockaddr_in clientAddr;
+      FD_CLR(listenfd,&fdRead);
+      sockaddr_in clientAddr;
 			socklen_t socklen=sizeof(sockaddr_in);
 			int connfd=Accept(listenfd,(sockaddr*)&clientAddr,&socklen);
-                        ClientSocket *client=new ClientSocket(connfd);
+      ClientSocket *client=new ClientSocket(connfd);
 			clients.push_back(client);//保存套接字描述符到vector中
       /*
 			for(int i=0;i<clients.size();i++){//向所有的客户端广播消息，有新的客户加入
@@ -201,8 +201,8 @@ public:
       case CMD_LOGIN:{
         LOGIN *user=(LOGIN*)header;
   //      printf("收到客户端消息长度:%d，消息类型:%d,username=%s,password=%s\n",user->dataLength,user->cmd,user->username,user->password);
-        LOGINRESULT ret;
-        send(fd,&ret);
+ //       LOGINRESULT ret;
+  //      send(fd,&ret);
       }
       break;
       case CMD_LOGOUT:{

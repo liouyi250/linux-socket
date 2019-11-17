@@ -24,15 +24,18 @@ void sendCmd(Client *client){//线程处理函数
 	}
 }
 
-int main(){
-	const int n=100;
-	Client *client[n];
-	for(int i=0;i<n;i++){
+const int n=1000;
+const int t=4;
+Client *client[n];
+
+void sendThread(int id){
+	int start=n/t*(id-1);
+	int end=n/t*id;
+	for(int i=start;i<end;i++){
 		client[i]=new Client();
-		client[i]->init();
 	}
 
-	for(int i=0;i<n;i++){
+	for(int i=start;i<end;i++){
 		client[i]->connect("127.0.0.1",8000);
 	}
 
@@ -41,20 +44,28 @@ int main(){
 	strcpy(login.password,"李四");
 	int size=sizeof(LOGIN);
 	while(g_bloops){
-		for(int i=0;i<n;i++){
-		client[i]->send(&login,size);
-                client[i]->onSelect();
-
-	}
-		
-//		client1.onSelect();
-
+		for(int i=start;i<end;i++){
+			client[i]->send(&login,size);
+		}
 	}
 
-	for(int i=0;i<n;i++){
+	for(int i=start;i<end;i++){
 		client[i]->close();
+		delete client[i];
+		client[i]=NULL;
+	}
+}
 
+int main(){
+
+	for(int i=0;i<t;i++){
+		std::thread th(sendThread,i+1);
+		th.detach();
+	}
+	while(1){
+		sleep(1);
 	}
 	
+
 	return 0;
 }
